@@ -108,9 +108,16 @@ func (b *Buffer) Write(data []byte) (n int, err error) {
 
 func (b *Buffer) ExtendHeader(n int) []byte {
 	if b.start < n {
-		panic(F.ToString("buffer overflow: capacity ", b.capacity, ",start ", b.start, ", need ", n))
+		// 如果空间不足，重新分配缓冲区
+		newData := make([]byte, len(b.data)+n)
+		copy(newData[n:], b.data[b.start:b.end])
+		b.data = newData
+		b.end -= b.start
+		b.start = n
+		b.capacity = len(newData)
+	} else {
+		b.start -= n
 	}
-	b.start -= n
 	return b.data[b.start : b.start+n]
 }
 

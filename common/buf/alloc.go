@@ -1,9 +1,8 @@
 package buf
 
-// Inspired by https://github.com/xtaci/smux/blob/master/alloc.go
-
 import (
 	"errors"
+	"log" // 添加日志包
 	"math/bits"
 	"sync"
 )
@@ -44,6 +43,7 @@ func newDefaultAllocator() Allocator {
 // Get a []byte from pool with most appropriate cap
 func (alloc *defaultAllocator) Get(size int) []byte {
 	if size <= 0 || size > 65536 {
+		log.Printf("Get: invalid size %d", size)
 		return nil
 	}
 
@@ -90,13 +90,12 @@ func (alloc *defaultAllocator) Get(size int) []byte {
 func (alloc *defaultAllocator) Put(buf []byte) error {
 	bits := msb(cap(buf))
 	if cap(buf) == 0 || cap(buf) > 65536 || cap(buf) != 1<<bits {
+		log.Printf("Put: invalid buffer size %d", cap(buf))
 		return errors.New("allocator Put() incorrect buffer size")
 	}
 	bits -= 6
 	buf = buf[:cap(buf)]
 
-	//nolint
-	//lint:ignore SA6002 ignore temporarily
 	switch bits {
 	case 0:
 		alloc.buffers[bits].Put((*[1 << 6]byte)(buf))
